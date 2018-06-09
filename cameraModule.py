@@ -12,7 +12,7 @@ class Cam:
     def __init__(self , port , size):
         self.port = port
         self.w , self.h = size
-        self.img = None
+        self.img = np.array((640, 480, 3), np.uint8)
         print(" IN :: Camera Module. Started Threading for updateFrame")
 
         print("Inside updateFrame")
@@ -33,7 +33,8 @@ class Cam:
         setupCamera()
 
     def getFrame(self):
-        return self.updateFrame()
+        if self.updateFrame() is not None:
+            return self.updateFrame()
 
     def updateFrame(self):
         raw_image = self.fPipe.stdout.read(self.h * self.w * 3)

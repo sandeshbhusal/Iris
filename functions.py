@@ -10,10 +10,11 @@ from threading import Thread
 import math
 import time
 
+beginTime = time.time()
+dblTime   = time.time()
+prevCursor = [0, 0]
 class ImageProcessor:
     def __init__(self):
-        global prevHeadTop
-        prevHeadTop = 0
         print("--- Creating the image processor => ImageProcessor.__init__ ---")
         # Setup the face cascade, camera and predictor.
         # Also block the stream until image is not read
@@ -63,47 +64,72 @@ class ImageProcessor:
                     
                     elif name == 'right_eye':
                         rightEye = shape[i:j][3]
-                toReturn = (x, y, w, h, leftEye, rightEye, noseTopPosition, noseBottomPosition, noseLeftPixel, noseRightPixel)
+                toReturn = (left, top, w, h, leftEye, rightEye, noseTopPosition, noseBottomPosition, noseLeftPixel, noseRightPixel)
                 if MODE != "CONFIG":
-                    processor = ProcessUI(toReturn)
+                    processor = ProcessUI(f, toReturn)
                 cv2.imshow("Image", f)
                 break   #Currently work on only one face. :)
                 
 class ProcessUI:
-    def __init__(self, faceCoordinates):
+    def __init__(self, image, faceCoordinates):
+        (left, top, w, h, leftEye, rightEye, noseTopPosition, noseBottomPosition, noseLeftPixel, noseRightPixel) = faceCoordinates
+
+        cv2.circle(image, (left, top), 3, (0, 255, 0), 4)
+        for (x,y) in faceCoordinates[4:]:
+            cv2.circle(image, (x,y), 2, (255, 0,  0), 3)
+        cv2.imshow("Image 2", image)
         mouse = Controller()
         # This function gets the facial coordinates, and the input image, and makes the necessary calculations.
-        (x, y, w, h, leftEye, rightEye, noseTopPosition, noseBottomPosition, noseLeftPixel, noseRightPixel) = faceCoordinates
         distanceLeft = np.array(noseTopPosition - leftEye)
+        unitLeft = distanceLeft
         distanceRight = np.array(noseTopPosition - rightEye)
+        unitRight = distanceRight
         distanceLeft = np.sum(distanceLeft ** 2, axis = 0)
         distanceRight = np.sum(distanceRight ** 2, axis = 0)
-
+        unitLeft = unitLeft / distanceLeft ** 0.5
+        unitRight = unitRight / distanceRight ** 0.5
+        angle = np.dot(unitLeft, unitRight)
+        angle = math.degrees(math.acos(angle))
+        angle = ( angle // 2 ) * 10
         topBottom = np.array(noseTopPosition - noseBottomPosition)
         topBottom = (np.sum(topBottom ** 2, axis = 0)) ** 0.5
         # Face top/bottom tracking using angle.
 
         faceRatio = topBottom / h
         val = (distanceLeft - distanceRight)
+        global prevCursor, beginTime, dblTime
         x, y = mouse.position
+        if (x,y)==prevCursor:
+            if (time.time() - beginTime) > 2:
+                mouse.press(Button.left)
+                mouse.release(Button.left)
+                print("Click event occured")
+                beginTime = time.time()
+
+            if(time.time() - dblTime) > 4:
+                mouse.click(Button.left, 2)
+                print("Double click event occured")
+                dblTime = time.time()
+        else:
+            beginTime = time.time()
+            dblTime = time.time()
+            prevCursor=mouse.position
+
+        print(mouse.position)
+
         if abs(val) > 300:
             if distanceLeft > distanceRight: #Facing right
-                x = x + 30
+                x = x + 7
             else:
-                x = x - 30  # Facing left
-        else:   
-            pass
-        self.prevHeadTop = global prevHeadTop
-        if abs(prevHeadTop - y) >= 40:
-            if prevHeadTop > y:
-                y = y - 30
+                x = x - 7  # Facing left
+        
+        if angle not in range(760, 840):
+            if angle <= 760:
+                y = y - 4
             else:
-                y = y + 30
-        else:
-            prevHeadTop = (prevHeadTop + y ) / 2 
-        mouse.position = (x, y)
+                y = y + 4
 
-
+        mouse.position = x, y
 class faceConstants:
     def __init__(self):
         pass
