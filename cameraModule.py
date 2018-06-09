@@ -31,16 +31,17 @@ class Cam:
                 '-f', 'image2pipe', '-']
         self.fPipe = sp.Popen(fCommand, stdin = nPipe.stdout , stdout = sp.PIPE, stderr=None, bufsize=11**8)
         setupCamera()
+        Thread(target=self.updateFrame).start()
 
     def getFrame(self):
-        if self.updateFrame() is not None:
-            return self.updateFrame()
+        return self.img
 
     def updateFrame(self):
-        raw_image = self.fPipe.stdout.read(self.h * self.w * 3)
-        image = np.fromstring(raw_image,dtype = 'uint8')
-        image = image.reshape((self.h,self.w,3))
-        self.fPipe.stdout.flush()
-        if image is not None:
-            self.img = image
-            return image
+        while True:
+            raw_image = self.fPipe.stdout.read(self.h * self.w * 3)
+            image = np.fromstring(raw_image,dtype = 'uint8')
+            image = image.reshape((self.h,self.w,3))
+            self.fPipe.stdout.flush()
+            if image is not None:
+                self.img = image
+            

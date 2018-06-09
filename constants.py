@@ -6,5 +6,8 @@ MY_IP   = "192.168.0.107"
 IMAGE_HEIGHT = 480
 IMAGE_WIDTH  = 640
 
-MODE = "DEBUG"
+MODE = "GAMING" # GAMING | BROWSING
 KEYBOARD = "ACTIVE" # ACTIVE | INACTIVE
+
+gamingOffset = {'x':14, 'y':10}
+browsingOffset = {'x':7, 'y' : 5}

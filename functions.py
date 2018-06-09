@@ -31,11 +31,16 @@ class ImageProcessor:
         # This function returns the facial features, as a tuple to another function
         # for further processing. The function plots the tuples and makes the required mouse/
         # keyboard movements as requirement.
+        print("Initializing face detection...")
+        time.sleep(10)
         while True:
             key = cv2.waitKey(1)
             if key & 0xff == 27:
                 break
             f = self.cam.getFrame()
+            if f is None:
+                continue
+            cv2.imshow("imae", f)
             f = cv2.flip(f, 1)
             gray = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
             cv2.equalizeHist(gray, gray)
@@ -72,12 +77,16 @@ class ImageProcessor:
                 
 class ProcessUI:
     def __init__(self, image, faceCoordinates):
+        if MODE == "BROWSING":
+            self.offsetHolder = gamingOffset
+        else:
+            self.offsetHolder = browsingOffset
         (left, top, w, h, leftEye, rightEye, noseTopPosition, noseBottomPosition, noseLeftPixel, noseRightPixel) = faceCoordinates
 
         cv2.circle(image, (left, top), 3, (0, 255, 0), 4)
         for (x,y) in faceCoordinates[4:]:
             cv2.circle(image, (x,y), 2, (255, 0,  0), 3)
-        cv2.imshow("Image 2", image)
+        # cv2.imshow("Image 2", image)
         mouse = Controller()
         # This function gets the facial coordinates, and the input image, and makes the necessary calculations.
         distanceLeft = np.array(noseTopPosition - leftEye)
@@ -114,20 +123,17 @@ class ProcessUI:
             beginTime = time.time()
             dblTime = time.time()
             prevCursor=mouse.position
-
-        print(mouse.position)
-
         if abs(val) > 300:
             if distanceLeft > distanceRight: #Facing right
-                x = x + 7
+                x = x + self.offsetHolder['x']
             else:
-                x = x - 7  # Facing left
+                x = x - self.offsetHolder['x'] # Facing left
         
         if angle not in range(760, 840):
             if angle <= 760:
-                y = y - 4
+                y = y - self.offsetHolder['y']
             else:
-                y = y + 4
+                y = y + self.offsetHolder['y']
 
         mouse.position = x, y
 class faceConstants:
